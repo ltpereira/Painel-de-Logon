@@ -6,10 +6,14 @@ st.set_page_config(layout="wide")
 st.title("🔎 Painel de Logins")
 
 # Aviso inicial
-st.info("Carregue o arquivo CSV de logins para iniciar a análise.")
+st.info("Carregue um ou mais arquivos CSV de logins para iniciar a análise.")
 
-# Upload
-uploaded_file = st.file_uploader("Carregue o arquivo CSV", type=["csv"])
+# Upload múltiplo
+uploaded_files = st.file_uploader(
+    "Carregue um ou mais arquivos CSV",
+    type=["csv"],
+    accept_multiple_files=True
+)
 
 # =========================
 # FUNÇÃO DE LEITURA ROBUSTA
@@ -24,10 +28,10 @@ def load_data(file):
         on_bad_lines="skip"
     )
 
-    # ✅ Normaliza colunas (evita KeyError)
+    # Normaliza colunas
     df.columns = [col.strip().upper() for col in df.columns]
 
-    # ✅ Validação obrigatória
+    # Validação obrigatória
     required_columns = ["DATA", "LOGIN"]
 
     missing = [col for col in required_columns if col not in df.columns]
@@ -37,11 +41,11 @@ def load_data(file):
             f"Colunas disponíveis: {list(df.columns)}"
         )
 
-    # ✅ Tratamento
+    # Conversões
     df["DATA"] = pd.to_datetime(df["DATA"], dayfirst=True, errors="coerce")
     df["LOGIN"] = df["LOGIN"].astype(str).fillna("")
 
-    # ✅ Remove inválidos
+    # Remove inválidos
     df = df.dropna(subset=["DATA"])
 
     return df
@@ -50,19 +54,27 @@ def load_data(file):
 # =========================
 # FLUXO PRINCIPAL
 # =========================
-if uploaded_file is not None:
+if uploaded_files:
 
-    st.warning("Linhas inválidas no CSV serão ignoradas automaticamente.")
+    st.warning("Linhas inválidas nos CSVs serão ignoradas automaticamente.")
 
     try:
-        df = load_data(uploaded_file)
+        dataframes = []
+
+        for file in uploaded_files:
+            df_temp = load_data(file)
+            df_temp["ARQUIVO_ORIGEM"] = file.name  # opcional
+            dataframes.append(df_temp)
+
+        # Junta tudo
+        df = pd.concat(dataframes, ignore_index=True)
 
         if df.empty:
-            st.error("O arquivo não possui dados válidos.")
+            st.error("Os arquivos não possuem dados válidos.")
             st.stop()
 
     except Exception as e:
-        st.error(f"Erro ao processar o arquivo: {e}")
+        st.error(f"Erro ao processar os arquivos: {e}")
         st.stop()
 
     # =========================
