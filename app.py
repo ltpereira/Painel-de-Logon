@@ -8,7 +8,13 @@ uploaded_file = st.file_uploader("Carregue o arquivo CSV", type=["csv"])
 
 if uploaded_file is not None:
     # Ler CSV
-    df = pd.read_csv(uploaded_file, sep=";", encoding="utf-8")
+    df = pd.read_csv(
+    uploaded_file,
+    sep=";",
+    encoding="latin1",         # <- mais tolerante que utf-8
+    engine="python",           # <- parser mais robusto
+    on_bad_lines="skip"        # <- ignora linhas quebradas
+)
     
     # Garantir tipos corretos
     df["DATA"] = pd.to_datetime(df["DATA"], dayfirst=True, errors="coerce")
