@@ -35,11 +35,16 @@ if uploaded_file is not None:
 
     st.warning("Linhas inválidas no CSV serão ignoradas automaticamente.")
 
+    try:
     df = load_data(uploaded_file)
 
     if df.empty:
         st.error("O arquivo não possui dados válidos.")
         st.stop()
+
+except Exception as e:
+    st.error(f"Erro ao processar o arquivo: {e}")
+    st.stop()
 
     # Filtro login
     login_input = st.text_input("Digite o login (ex: vitor.alcantara)")
